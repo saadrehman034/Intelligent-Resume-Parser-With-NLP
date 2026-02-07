@@ -32,3 +32,4 @@ def extract_entities(text: str):
             structured_data["experience"].append(text_val)
             
     return structured_data
+
