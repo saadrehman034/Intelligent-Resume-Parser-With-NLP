@@ -1,32 +1,60 @@
+# app/scoring.py
 import re
+
 def extract_years_of_experience(text: str) -> float:
-    # Regex for patterns like "5+ years", "3 years of experience"
-    pattern = r"(\d+)\+?\s*(?:years|yrs)"
-    matches = re.findall(pattern, text, re.IGNORECASE)
+    # Use the same logic as NER model
+    text_lower = text.lower()
     
-    if matches:
-        # Take the maximum number found (often indicative of total exp)
-        return float(max(map(int, matches)))
-    return 0.0
+    patterns = [
+        r'(\d+)\+?\s*years?',
+        r'(\d+)\s*yr', 
+        r'experience.*?(\d+)',
+        r'(\d+).*?experience',
+        r'(\d+)\+'
+    ]
+    
+    max_years = 0
+    for pattern in patterns:
+        matches = re.findall(pattern, text_lower, re.IGNORECASE)
+        for match in matches:
+            try:
+                years = int(match)
+                if years > max_years:
+                    max_years = years
+            except:
+                pass
+    
+    # If no explicit years, calculate from dates
+    if max_years == 0:
+        date_pattern = r'(\d{4})\s*[-–]\s*(?:Present|\d{4})'
+        dates = re.findall(date_pattern, text)
+        if dates:
+            try:
+                earliest = min([int(date) for date in dates])
+                max_years = 2026 - earliest
+            except:
+                max_years = 0
+    
+    return float(max_years) if max_years > 0 else 0.0
 
 def calculate_scores(skill_match_rate, candidate_exp, required_exp=2.0):
-    # 1. Skill Score (40%)
+    # Skill Score (0-100)
     skill_score = skill_match_rate * 100
     
-    # 2. Experience Score (30%)
-    # Cap at 100% if they meet requirements
+    # Experience Score (0-100)
     if required_exp > 0:
-        exp_ratio = min(candidate_exp / required_exp, 1.5) # Allow bonus for extra exp
-        exp_score = min(exp_ratio * 100, 100)
+        if candidate_exp >= required_exp:
+            exp_score = 100
+        else:
+            exp_score = (candidate_exp / required_exp) * 100
     else:
         exp_score = 100
-        
-    # 3. Overall Weighted Score
-    # Weights: Skill 0.6, Exp 0.4 (Simplification for demo)
+    
+    # Overall Score (weighted)
     overall_score = (skill_score * 0.6) + (exp_score * 0.4)
     
     return {
-        "skill_score": round(skill_score, 2),
-        "experience_score": round(exp_score, 2),
-        "overall_score": round(overall_score, 2)
+        "skill_score": round(skill_score, 1),
+        "experience_score": round(exp_score, 1),
+        "overall_score": round(overall_score, 1)
     }
