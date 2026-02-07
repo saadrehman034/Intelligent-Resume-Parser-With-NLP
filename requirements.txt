@@ -6,9 +6,10 @@ python-docx
 torch
 transformers
 sentence-transformers
-gliner
+gliner7
 numpy
 scikit-learn
 pydantic
 faiss-cpu
 spacy
+streamlit
