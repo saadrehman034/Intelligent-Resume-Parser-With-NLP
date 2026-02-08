@@ -6,7 +6,7 @@ python-docx
 torch
 transformers
 sentence-transformers
-gliner7
+gliner
 numpy
 scikit-learn
 pydantic
